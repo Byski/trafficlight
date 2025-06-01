@@ -1,121 +1,203 @@
-============================================================
-        TRAFFIC LIGHT SYSTEM WITH PEDESTRIAN CONTROL
-                     by Ebokosia Ebube Joy
-============================================================
 
-PROJECT OVERVIEW
-----------------
-This Arduino-based project simulates a **smart traffic light system** 
-with pedestrian button control, visual alerts using LEDs and RGB lights, 
-sound feedback via a buzzer, and a clear LCD display for pedestrians.
+ 
+#include <LiquidCrystal.h>
 
-It demonstrates **real-world traffic light behavior**, where the system:
-- Cycles through normal car traffic signals (Green → Orange → Red)
-- Responds to a **pedestrian button** to allow safe crossing
-- Uses **sound cues** for visually impaired pedestrians
-- Displays crossing status on a **16x2 LCD**
+// Liquid Crystal Display
+LiquidCrystal LCD(7, 6, 5, 4, 3, 2);
+ 
+// Traffic Light Colours Components
+const int LEDRed = 9;
+const int LEDOrange = 8;
+const int LEDGreen = 7;
 
-------------------------------------------------------------
-COMPONENTS USED
-------------------------------------------------------------
+// Traffic Light Speakers Component
+const int Speaker = 6;
 
-• LiquidCrystal LCD (16x2)
-• Red, Orange, Green Traffic LEDs
-• RGB LED for Pedestrian Light (Red, Green, Blue)
-• Passive Buzzer/Speaker
-• Push Button (for pedestrian request)
-• Arduino Board (Uno, Mega, etc.)
-• Jumper wires and breadboard
+// Traffic Light RGB Components
+const int RGBRed = 10;
+const int RGBGreen = 11;
+const int RGBBlue = 12;
 
-------------------------------------------------------------
-PIN CONFIGURATION
-------------------------------------------------------------
+// Traffic Light Button Component
+const int Button = 13;
 
-- LCD Pins         : 7, 6, 5, 4, 3, 2
-- LED Red          : Pin 9
-- LED Orange       : Pin 8
-- LED Green        : Pin 7
-- RGB Red          : Pin 10
-- RGB Green        : Pin 11
-- RGB Blue         : Pin 12
-- Speaker          : Pin 6
-- Pedestrian Button: Pin 13
+// Normal Traffic Light Timer (ms)
+const int RED_LIGHT_TIME = 1000;
+const int ORANGE_LIGHT_TIME = 1000;
+const int GREEN_LIGHT_TIME = 1000;
 
-------------------------------------------------------------
-TRAFFIC FLOW LOGIC
-------------------------------------------------------------
+// Pedestrian Crossing Timer (ms)
+const int PEDESTRIAN_GO_TIME = 2500;
+const int PEDESTRIAN_PROMPT_TIME = 2000;
 
-1. **Normal Mode (Cars Move Freely)**
-   - Green LED is ON
-   - Pedestrian RGB stays RED (Don't Cross)
-   - System continuously checks if the button is pressed
+// To change to Pedestrian Crossing operation
+boolean changeToPedestrian = false;
 
-2. **Pedestrian Request Detected**
-   - Button is pressed (Pin 13 HIGH)
-   - Traffic light cycles to ORANGE then RED
-   - Pedestrian RGB turns WHITE (safe to cross)
-   - LCD displays "CROSS"
-   - Speaker beeps for alert
+// Get the button value
+int buttonValue = 0;
 
-3. **Crossing Time Expires**
-   - RGB turns ORANGE then RED again
-   - LCD displays "WAIT"
-   - System returns to normal traffic cycle
 
-------------------------------------------------------------
-TIMINGS (in milliseconds)
-------------------------------------------------------------
 
-- RED_LIGHT_TIME          : 1000
-- ORANGE_LIGHT_TIME       : 1000
-- GREEN_LIGHT_TIME        : 1000
-- PEDESTRIAN_GO_TIME      : 2500
-- PEDESTRIAN_PROMPT_TIME  : 2000
+/*******************
 
-All delays can be adjusted to simulate real-world scenarios.
+   Arduino Functions
 
-------------------------------------------------------------
-FUNCTIONS EXPLAINED
-------------------------------------------------------------
+********************/
 
-• **setup()**  
-  Initializes the LCD and configures all component pins.
+void setup() {
+   configureComponents();
+}
 
-• **loop()**  
-  Continuously checks traffic and pedestrian states.
+void loop() {
+   if (!changeToPedestrian)
+      normalTrafficOperation(); // Cars are moving
+   else
+      pedestrianCrossing(); // Pedestrians are now crossing
+      
+}
 
-• **normalTrafficOperation()**  
-  Activates regular traffic lights and listens for button presses.
 
-• **pedestrianCrossing()**  
-  Switches traffic lights, enables pedestrian cross, LCD alerts, and beeping.
 
-• **checkPedestrianButton()**  
-  Reads the pedestrian button input and updates the system state.
+/************************
 
-• **beepSpeaker(freq, duration)**  
-  Produces audible beeps using the buzzer.
+   User-defined Functions
 
-------------------------------------------------------------
-USAGE
-------------------------------------------------------------
+*************************/
 
-1. Upload the code to your Arduino board.
-2. Connect the components to the specified pins.
-3. Power the board and observe:
-   - Normal traffic light operation.
-   - Pedestrian button response.
-   - LCD instructions ("WAIT" and "CROSS").
-   - RGB and buzzer guidance for crossing.
+// Configuring Components
+void configureComponents() {
+   // Setup the LCD screen
+   LCD.begin(16, 2);
+   LCD.print("Wait!");
+   
+   // Setup LED
+   pinMode(LEDRed, OUTPUT);
+   pinMode(LEDOrange, OUTPUT);
+   pinMode(LEDGreen, OUTPUT);
+   
+   // Setup Speaker
+   pinMode(Speaker, OUTPUT);
+   
+   // Setup RGB
+   pinMode(RGBRed, OUTPUT);
+   pinMode(RGBGreen, OUTPUT);
+   pinMode(RGBBlue, OUTPUT);
+   
+   // Setup Button
+   pinMode(Button, OUTPUT);
+}
 
-------------------------------------------------------------
-CREDITS
-------------------------------------------------------------
+void setupLCD() {
+   pinMode(LED_BUILTIN, OUTPUT);
+   
+   // Setup the LCD's number of columns and rows:
+   LCD.begin(16, 2);
+   
+   // Print a message to the LCD
+   LCD.print("Ebube");
+   delay(1000);
+   
+   LCD.setCursor(5, 1); // set the cursor to column 5, line 1
+   LCD.print("Traffic Light"); // print the year
+   delay(1000);
+   
+   LCD.clear(); // Clear the display
+}
+// End of Configuring Components
 
-Project Author : Ebokosia Ebube Joy  
-Year           : 2025  
-License        : MIT – Free to use, share, and modify with credit.
 
-============================================================
-   FOR EDUCATIONAL DEMOS, CLASS PROJECTS, AND IoT SIMULATIONS
-============================================================
+
+
+// Traffic Light Operation
+void normalTrafficOperation() {
+   // Ensure the pedestrian crossing light is on red
+   digitalWrite(RGBRed, LOW);
+   digitalWrite(RGBGreen, HIGH);
+   digitalWrite(RGBBlue, HIGH);
+  
+   
+   // Turn on Green
+   digitalWrite(LEDRed, LOW);
+   digitalWrite(LEDOrange, LOW);
+   digitalWrite(LEDGreen, HIGH);
+   
+   
+   // Check if the Pedestrian Button is being clicked
+   checkPedestrianButton();
+}
+
+void checkPedestrianButton() {
+   buttonValue = digitalRead(Button);
+   
+   if (buttonValue > 0)
+      changeToPedestrian = true;
+}
+
+void pedestrianCrossing() {   
+   // Pedestrians should still wait
+   beepSpeaker(1000, 50);
+   beepSpeaker(1000, 50);
+   beepSpeaker(1000, 50);   
+   beepSpeaker(1000, 50);
+   
+   // Turn on Orange
+   digitalWrite(LEDRed, LOW);
+   digitalWrite(LEDOrange, HIGH);
+   digitalWrite(LEDGreen, LOW);
+   
+   beepSpeaker(ORANGE_LIGHT_TIME, 50);
+   
+   // Turn on RED
+   beepSpeaker(1000, 50);
+   digitalWrite(LEDRed, HIGH);
+   digitalWrite(LEDOrange, LOW);
+   digitalWrite(LEDGreen, LOW);
+   
+   beepSpeaker(RED_LIGHT_TIME, 50);   
+   
+   // Pedestrians can cross now
+   // Ensure the pedestrian crossing light is on white
+   digitalWrite(RGBRed, HIGH);
+   digitalWrite(RGBGreen, LOW);
+   digitalWrite(RGBBlue, HIGH);
+   
+   // Set the Display to say the pedestrians can go
+   LCD.clear();
+   LCD.begin(16, 2);
+   LCD.print("Cross");
+   
+   beepSpeaker(500, PEDESTRIAN_GO_TIME);
+   
+   // Set the pedestrian crossing light to be on orange
+   digitalWrite(RGBRed, LOW);
+   digitalWrite(RGBGreen, LOW);
+   digitalWrite(RGBBlue, HIGH);
+   delay(PEDESTRIAN_PROMPT_TIME);
+   
+   // Set the Display to say the pedestrians to wait
+   LCD.clear();
+   LCD.begin(16, 2);
+   LCD.print("Wait");
+
+   // Turn on Orange traffic light
+   digitalWrite(LEDRed, LOW);
+   digitalWrite(LEDOrange, HIGH);
+   digitalWrite(LEDGreen, LOW);
+   
+   delay(ORANGE_LIGHT_TIME / 1.2);
+   
+   // Resume normal traffic operation
+   changeToPedestrian = false;
+   
+}
+
+void beepSpeaker(int freq, int duration) {
+   tone(Speaker, freq, duration);
+   delay(duration);
+   noTone(Speaker);
+   delay(1000);
+}
+// End of Traffic Light Operation
+
+#pragma GCC pop_options
+
